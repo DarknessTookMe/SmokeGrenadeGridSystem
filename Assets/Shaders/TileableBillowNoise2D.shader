@@ -2,7 +2,6 @@ Shader "Unlit/TileableBillowNoise2D"
 {
     Properties
     {
-
         //declare public variables and control by sliders in the inspector
         _MainTex ("Texture", 2D) = "white" {}
         _NoiseScale ("Noise Scale", Range(0.1, 50)) = 2.0
@@ -15,12 +14,7 @@ Shader "Unlit/TileableBillowNoise2D"
         _PathLengthScale ("Path Length Scale", Range(0.1, 5)) = 1.0
         _PowderEffect ("Powder Sugar Effect", Range(0, 3)) = 1.0 
         // World-space tiling parameters
-        _WorldScale ("World Scale", Range(0.001, 0.5)) = 0.02
-        _WorldOffset ("World Offset", Vector) = (0, 0, 0, 0)
-        
-        // NEW: Add individual variation
-        _InstanceOffset ("Instance Offset", Vector) = (0, 0, 0, 0)
-        _RandomSeed ("Random Seed", Float) = 0.0
+        _WorldScale ("World Scale", Range(0.001, 0.5)) = 0.5 // zome in large cloud, zoom out detailed
 
         _LightDirection ("Light Direction", Vector) = (0.5, 0.5, 0, 0)
         _LightColor ("Light Color", Color) = (1, 0.9, 0.8, 1)
@@ -93,11 +87,6 @@ Shader "Unlit/TileableBillowNoise2D"
             
             // World-space tiling
             float _WorldScale;
-            float2 _WorldOffset;
-            
-            // Individual variation
-            float2 _InstanceOffset;
-            float _RandomSeed;
 
             float3 _LightDirection;
             float4 _LightColor;
@@ -190,10 +179,9 @@ Shader "Unlit/TileableBillowNoise2D"
             {
                 //(World Noise) because we want to connect all tiles (flood grids) together
                 //convert world position to noise space
-                float2 worldUV = i.worldPos * _WorldScale + _WorldOffset;
-                
-                // instance specific offset 
-                worldUV += _InstanceOffset + float2(_RandomSeed, _RandomSeed * 1.3);
+                float2 worldUV = i.worldPos * _WorldScale;
+                //i.worldPos becomes the coord system of the noise
+                //so moving prefab is like reveling noise underneath                
                 
                 // Base noise UV
                 float2 baseUV = worldUV * _NoiseScale;
@@ -206,14 +194,14 @@ Shader "Unlit/TileableBillowNoise2D"
                 float timeOffset = _Time.y * 2.0;
                 float2 turbulenceUV = scrollUV;
                 
-                // Use different frequencies for turbulence to avoid patterns
+                // Use different frequencies for turbulence
                 turbulenceUV.x += sin(scrollUV.y * 3.0 + timeOffset) * _Turbulence * 0.15;
                 turbulenceUV.y += cos(scrollUV.x * 2.5 + timeOffset * 0.8) * _Turbulence * 0.1;
                 
                 // small offset to break symmetry
                 // per-instance noise variation
                 turbulenceUV += hash(i.worldPos * 0.1) * 0.1;
-
+                
                 //3 layers of noise with diffrent freq
                 float noise1 = billowNoise(turbulenceUV);
                 float noise2 = billowNoise(turbulenceUV * 1.7 + float2(0.3, 0.7) + timeOffset * 0.4);
@@ -237,33 +225,34 @@ Shader "Unlit/TileableBillowNoise2D"
 
                 //Beer's Law: how much light get absorbed  
                 // Combine world noise with local mask
-                // density is not constant 
+                // density is not constant everywhere inside the smoke
                 float density = finalNoise * circleMask;
                 
+                //this code be added!!!
                 //add anisotropic scattering (scatting forward)
                 //light doesn't scatter evenly inside the smoke
-
-                //add powder suger effect by guerrilla games
-                //cloud have darker edges and lighter creases
-                //1-exp(-d * 2) 
-
-                float powderAlpha = PowderSugarEffect(density);
-                float3 lightDir = normalize(float3(_LightDirection.xy, 0.1));
-                
-                float3 lightsEffect = _LightColor * _LightIntensity * powderAlpha;
-
                 //frostbite engine (EA) 
-                //mixing between forward and backward henyey greenstein
+                //mixing between forward and backward henyey greenstein if light source exist
                 //float phaseFunction = henyeygreenstenin(C, angle);
                 //float phasefunction = mix(HenyeyGreenstein(-C, angel), HenyeyGreenstein(C, angel), K);
                 //back scatting component
 
+                //add powder suger effect by guerrilla games
+                //cloud have darker edges and lighter creases
+                //1-exp(-d * 2) //balance the absorption aspect 
+                float powderAlpha = PowderSugarEffect(density);
+                float3 lightDir = normalize(float3(_LightDirection.xy, 0.1));
+                
+                //make the smoke react to light and give it the powdery effect
+                float3 lightsEffect = _LightColor * _LightIntensity * powderAlpha;
 
-                // Apply physical properties
+                // Apply smoke physical properties:
+                // how much the light absorpt of the light 
                 float absorption = density * _AbsorptionStrength; 
-                float pathLength = density * _PathLengthScale;
-                float transmission = exp(-absorption * pathLength);
-                float beerAlpha = 1.0 - transmission;
+                float pathLength = density * _PathLengthScale; // how deep the light travel
+                //all light passes to all light abosorbed
+                float transmission = exp(-absorption * pathLength); //Beers low T = exp(-sigma * L)
+                float beerAlpha = 1.0 - transmission; // convert to alpha
                 
                 // Color with gradient
                 float gradient = 1.0 - dist * 1.5;

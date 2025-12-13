@@ -70,10 +70,10 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _LightIntensity: 2
+    - _LightIntensity: 1.5
     - _Metallic: 0
     - _Mode: 0
-    - _NoiseIntensity: 0.93
+    - _NoiseIntensity: 1
     - _NoiseScale: 10
     - _OcclusionStrength: 1
     - _Parallax: 0.02
