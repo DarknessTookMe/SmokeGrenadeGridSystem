@@ -1,5 +1,5 @@
 // author name: Amir Alrishan
-// Description: A ManagerGrid system for top-down 2D games 
+// Description: A ManageGrid system for top-down 2D games 
 // to render and simulate how a smoke grenade will look from that view 
 // The script use flood fill algorithm to fill grid cells and if prefab exist 
 // the cells will be fille with that prefab will avoiding obstcales in the scene
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Collections; // Add this at the top
 
-public class ManageGrid: MonoBehaviour
+public class GridManager: MonoBehaviour
 {   
     [Header("Grid Settings")]
     public int width = 50;
@@ -18,7 +18,7 @@ public class ManageGrid: MonoBehaviour
     [Header("Visualization")]
     public bool showGridInGame = true; // for setting up the grid 
     public Color gridColor = Color.green; //color of the grid if scene is not runnning 
-    public Color cellCenterColor = Color.blue; //if scene is running
+    public Color gridColorActive = Color.blue; //if scene is running
     
     private Grid[,] grid;
     private Vector3 gridOrigin;
@@ -28,9 +28,6 @@ public class ManageGrid: MonoBehaviour
 
 
 
-    [Header("Fixed Count Flood Settings")]
-    public int maxCellsToFlood = 50; // Fixed number of cells to fill
-    public bool useEuclideanDistance = true; // True for circles, false for Manhattan 
 
     //for the grid and smoke refrence and obstacles positions
     private bool[,] visited;
@@ -38,7 +35,10 @@ public class ManageGrid: MonoBehaviour
     private bool[,] obstacleGrid;
 
 
-    [Header("Flood Fill setting")]
+    [Header("Flood Fill settings")]
+    // Fixed number of cells to fill
+    public int maxCellsToFlood = 50;
+    public bool useEuclideanDistance = true; // True for circles, false for Manhattan 
     public bool floodActive = true;
     public bool enableMouseClick = true;
     public float floodingSpeed = 0.005f; // flood speed 
@@ -51,11 +51,11 @@ public class ManageGrid: MonoBehaviour
     public GameObject smokePrefab; // Drag your smoke prefab here in Inspector
     public Transform smokeParent; // used in the future to clear the smoke 
     public bool showSmoke = true; 
-
     void Awake()
     {
         InitializeGrid();
         InitializeObstacle();
+        
     }
 
     //A step by step flood fill algorithm the fill cells inside a grid 
@@ -254,9 +254,9 @@ public class ManageGrid: MonoBehaviour
                 Debug.Log("Camera is not tagged");
                 return;
             }  //handle no camera tagged issue
+
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             mouseWorldPos.z = 0; // Ensure z = 0 for 2D
-
             // Convert to grid coordinates
             Grid clickedCell = GetCellAtWorldPosition(mouseWorldPos);
             
@@ -386,7 +386,7 @@ public class ManageGrid: MonoBehaviour
         // when the scene is running
         if (Application.isPlaying && grid != null)
         {
-            Gizmos.color = cellCenterColor;
+            Gizmos.color = gridColorActive;
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)

@@ -201,7 +201,7 @@ Shader "Unlit/TileableBillowNoise2D"
                 // small offset to break symmetry
                 // per-instance noise variation
                 turbulenceUV += hash(i.worldPos * 0.1) * 0.1;
-                
+
                 //3 layers of noise with diffrent freq
                 float noise1 = billowNoise(turbulenceUV);
                 float noise2 = billowNoise(turbulenceUV * 1.7 + float2(0.3, 0.7) + timeOffset * 0.4);
@@ -212,7 +212,6 @@ Shader "Unlit/TileableBillowNoise2D"
                 
                 // apply intensity
                 finalNoise = pow(saturate(finalNoise), _NoiseIntensity);
-                
 
                 //local mask calculation
                 float2 localUV = i.uv;
