@@ -296,7 +296,7 @@ public class GridManager: MonoBehaviour
                 // Check if ANY collider overlaps with the cell area
                 Collider2D[] overlappingColliders = Physics2D.OverlapBoxAll(
                     cellCenter, 
-                    new Vector2(cellSize, cellSize), // could be changed but for this implementation 
+                    new Vector2(cellSize , cellSize), // could be changed but for this implementation 
                     0f,                              //and then small grids the smoke go around the obstacle
                     obstacleLayerMask
                 );
